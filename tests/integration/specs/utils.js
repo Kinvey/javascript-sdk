@@ -3,7 +3,7 @@ import axios from 'axios';
 import _ from 'lodash';
 import * as Kinvey from '__SDK__';
 import * as Constants from './constants';
-import { authenticator as otpAuthenticator } from 'otplib';
+import * as otpjs from 'otp.js';
 
 export function ensureArray(entities) {
   return [].concat(entities);
@@ -332,6 +332,19 @@ export function getExpectedFileMetadata(metadata) {
   return expectedMetadata;
 }
 
+function isLocalhost() {
+  const useLocalhost = process.env.SDK_USE_LOCALHOST;
+  return useLocalhost && useLocalhost === 'true';
+}
+
+function getBaasUrl(config) {
+  if (isLocalhost()) {
+    return 'http://localhost:7007';
+  }
+
+  return config.apiHostname;
+}
+
 
 export async function cleanUpCollection(config, collectionName, requestLib) {
   let response;
@@ -350,7 +363,7 @@ export async function cleanUpCollection(config, collectionName, requestLib) {
         'X-Kinvey-Retain-collection-Metadata': true
       },
       method: 'POST',
-      url: `https://baas.kinvey.com/rpc/${config.appKey}/remove-collection`,
+      url: `${getBaasUrl(config)}/rpc/${config.appKey}/remove-collection`,
       data: { collectionName },
       content: JSON.stringify({ collectionName })
     });
@@ -392,20 +405,8 @@ export async function setupUserWithMFA(appCredentials, shouldLogoutUser = true) 
   };
 }
 
-function buildBaasUrl(path) {
-  const instanceId = process.env.INSTANCE_ID;
-  const isLocalhost = instanceId && instanceId.includes('localhost');
-  let protocol;
-  let domain;
-  if (isLocalhost) {
-    protocol = 'http';
-    domain = instanceId;
-  } else {
-    protocol = 'https';
-    domain = instanceId ? `${instanceId}-baas.kinvey.com` : 'baas.kinvey.com';
-  }
-
-  return `${protocol}://${domain}${path}`;
+function buildBaasUrl(path, sdkConfig) {
+  return `${getBaasUrl(sdkConfig)}/${path}`;
 }
 
 export async function createVerifiedAuthenticator(userId, sdkConfig, requestLib) {
@@ -416,14 +417,14 @@ export async function createVerifiedAuthenticator(userId, sdkConfig, requestLib)
       'X-Kinvey-API-Version': 6
     },
     method: 'POST',
-    url: buildBaasUrl(`/user/${sdkConfig.appKey}/${userId}/authenticators`),
+    url: buildBaasUrl(`user/${sdkConfig.appKey}/${userId}/authenticators`, sdkConfig),
     data: { type: 'totp', name: 'js-sdk-test' }
   };
 
   const response = await makeRequest(reqOpts, true, requestLib);
   const authenticator = response.data;
-  reqOpts.url = buildBaasUrl(`/user/${sdkConfig.appKey}/${userId}/authenticators/${authenticator.id}/verify`);
-  reqOpts.data = { code: otpAuthenticator.generate(authenticator.config.secret) };
+  reqOpts.url = buildBaasUrl(`user/${sdkConfig.appKey}/${userId}/authenticators/${authenticator.id}/verify`, sdkConfig);
+  reqOpts.data = { code: otpjs.googleAuthenticator.gen(authenticator.config.secret) };
   const verifyRes = await makeRequest(reqOpts, true, requestLib);
   authenticator.recoveryCodes = verifyRes.data.recoveryCodes || [];
   return authenticator;
@@ -437,7 +438,7 @@ export async function removeAuthenticator(userId, authenticatorId, sdkConfig, re
       'X-Kinvey-API-Version': 6
     },
     method: 'DELETE',
-    url: buildBaasUrl(`/user/${sdkConfig.appKey}/${userId}/authenticators/${authenticatorId}`)
+    url: buildBaasUrl(`user/${sdkConfig.appKey}/${userId}/authenticators/${authenticatorId}`, sdkConfig)
   };
 
   return makeRequest(reqOpts, true, requestLib);

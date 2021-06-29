@@ -1,5 +1,5 @@
 import chai from 'chai';
-import { authenticator as otpAuthenticator } from 'otplib';
+import * as otpjs from 'otp.js';
 import * as Kinvey from '__SDK__';
 import * as config from '../config';
 import * as utilities from '../utils';
@@ -190,7 +190,7 @@ describe('User tests', () => {
       describe('loginWithMFA()', () => {
         it('should login a user with correct credentials and code', async () => {
           const selectAuthenticator = (authenticators) => (authenticators.find((a) => a.id === userAuthenticator.id).id);
-          const mfaComplete = () => { return { code: otpAuthenticator.generate(userAuthenticator.config.secret) }};
+          const mfaComplete = () => { return { code: otpjs.googleAuthenticator.gen(userAuthenticator.config.secret) }};
           const user = await Kinvey.User.loginWithMFA(username, password, selectAuthenticator, mfaComplete);
           await assertUserData(user, username);
           const activeUser = await Kinvey.User.getActiveUser();
@@ -211,7 +211,7 @@ describe('User tests', () => {
             expect(context.error).to.exist;
             expect(context.error.message).to.contain('Your request body contained invalid or incorrectly formatted data.');
 
-            return { code: otpAuthenticator.generate(userAuthenticator.config.secret) };
+            return { code: otpjs.googleAuthenticator.gen(userAuthenticator.config.secret) };
           };
           const user = await Kinvey.User.loginWithMFA(username, password, selectAuthenticator, mfaComplete);
           await assertUserData(user, username);
@@ -231,7 +231,7 @@ describe('User tests', () => {
 
         it('should throw an error when selectAuthenticator returns null', async () => {
           const selectAuthenticator = () => null;
-          const mfaComplete = () => { return { code: otpAuthenticator.generate(userAuthenticator.config.secret) }};
+          const mfaComplete = () => { return { code: otpjs.googleAuthenticator.gen(userAuthenticator.config.secret) }};
           await expect(Kinvey.User.loginWithMFA(username, password, selectAuthenticator, mfaComplete)).to.be.rejectedWith('MFA authenticator ID is missing.');
         });
 
@@ -301,7 +301,7 @@ describe('User tests', () => {
             const selectAuthenticator = (authenticators) => (authenticators.find((a) => a.id === gullibleUserAuthenticator.id).id);
             const mfaComplete = () => {
               return {
-                code: otpAuthenticator.generate(gullibleUserAuthenticator.config.secret),
+                code: otpjs.googleAuthenticator.gen(gullibleUserAuthenticator.config.secret),
                 trustDevice: true
               }
             };
@@ -323,7 +323,7 @@ describe('User tests', () => {
             const mfaComplete = (authenticator, context) => {
               expect(context).to.exist;
               return {
-                code: otpAuthenticator.generate(gullibleUserAuthenticator.config.secret),
+                code: otpjs.googleAuthenticator.gen(gullibleUserAuthenticator.config.secret),
                 trustDevice: true
               }
             };
@@ -337,7 +337,7 @@ describe('User tests', () => {
             const mfaCompleteAnotherUser = () => {
               mfaCompleteIsCalled = true;
               return {
-                code: otpAuthenticator.generate(userAuthenticator.config.secret)
+                code: otpjs.googleAuthenticator.gen(userAuthenticator.config.secret)
               }
             };
             const user = await Kinvey.User.loginWithMFA(username, password, selectAuthenticatorAnotherUser, mfaCompleteAnotherUser);

@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
-const otplib = require('otplib');
+const otpjs = require('otp.js');
 
 const envPath = path.join(__dirname, '.env');
 if (fs.existsSync(envPath)) {
@@ -18,7 +18,7 @@ function login(retries=3) {
     data: {
       email: process.env.ACCOUNT_EMAIL,
       password: process.env.ACCOUNT_PASSWORD,
-      twoFactorToken: otplib.authenticator.generate(process.env.ACCOUNT_SECRET)
+      twoFactorToken: otpjs.googleAuthenticator.gen(process.env.ACCOUNT_SECRET)
     },
   }).then(({ data }) => {
     axios.defaults.headers.common['Authorization'] = `Kinvey ${data.token}`;

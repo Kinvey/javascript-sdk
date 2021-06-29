@@ -1,6 +1,6 @@
 import chai from 'chai';
 import _ from 'lodash';
-import { authenticator as otpAuthenticator } from 'otplib';
+import * as otpjs from 'otp.js';
 import * as Kinvey from '__SDK__';
 import * as config from '../config';
 import * as utilities from '../utils';
@@ -93,7 +93,7 @@ describe('MFA', () => {
             expect(authenticator).to.exist.and.to.be.an('object');
             expect(authenticator.config).to.exist.and.to.be.an('object');
             expect(authenticator.config.secret).to.exist;
-            return otpAuthenticator.generate(authenticator.config.secret);
+            return otpjs.googleAuthenticator.gen(authenticator.config.secret);
           };
           const expectedName = utilities.randomString(20, namePrefix);
           const result = await Kinvey.MFA.Authenticators.create({ name: expectedName }, verify);
@@ -117,7 +117,7 @@ describe('MFA', () => {
           expect(context.error).to.exist;
           expect(context.error.message).to.contain('Your request body contained invalid or incorrectly formatted data.');
 
-          return otpAuthenticator.generate(authenticator.config.secret);
+          return otpjs.googleAuthenticator.gen(authenticator.config.secret);
         };
         const expectedName = utilities.randomString(20, namePrefix);
         const activeUser = await Kinvey.User.getActiveUser();
