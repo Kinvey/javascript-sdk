@@ -1,14 +1,14 @@
-const store = new Map();
+import * as keychain from 'react-native-keychain';
 
 export async function get(key: string): Promise<string> {
-  return store.get(key);
+  const credentials = await keychain.getGenericPassword({ service: key })
+  return credentials ? credentials.password : null;
 }
 
 export async function set(key: string, session: string): Promise<boolean> {
-  store.set(key, session);
-  return true;
+  return keychain.setGenericPassword(key, session, { service: key }).then(result => !!result);
 }
 
 export async function remove(key: string): Promise<boolean> {
-  return store.delete(key);
+  return keychain.resetGenericPassword({ service: key });
 }

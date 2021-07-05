@@ -6,7 +6,8 @@
     "build": "cd ../../../packages/react-native-sdk/ && npm i --no-audit && npm run build",
     "pretest": "npm run build && node ../setup.js --target=react-native && node ../copy-specs.js --target=react-native --runner=jest",
     "test": "jest -i",
-    "posttest": "node ../clean.js --target=react-native"
+    "posttest": "node ../clean.js --target=react-native",
+    "test-debug": "jest -i --testMatch '**/autostore.spec.js'"
   },
   "dependencies": {},
   "devDependencies": {
@@ -22,6 +23,7 @@
     "metro-react-native-babel-preset": "0.66.0",
     "react": "17.0.1",
     "react-native": "0.64.1",
+    "react-native-keychain": "7.0.0",
     "react-native-push-notification": "7.3.1",
     "sinon": "10.0.0"
   }
