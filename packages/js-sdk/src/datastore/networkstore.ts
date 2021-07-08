@@ -38,8 +38,8 @@ export class NetworkStore {
     return `${getAppKey()}.c-${this.collectionName}`;
   }
 
-  get personalChannelName() {
-    const session = getSession();
+  async getPersonalChannelName() {
+    const session = await getSession();
     if (session) {
       return `${this.channelName}.u-${session._id}`;
     }
@@ -364,8 +364,9 @@ export class NetworkStore {
     request.timeout = timeout;
     await request.execute();
     subscribeToChannel(this.channelName, receiver);
-    if (this.personalChannelName) {
-      subscribeToChannel(this.personalChannelName, receiver);
+    const personalChannelName = await this.getPersonalChannelName();
+    if (personalChannelName) {
+      subscribeToChannel(personalChannelName, receiver);
     }
     return true;
   }
@@ -384,7 +385,7 @@ export class NetworkStore {
     request.timeout = timeout;
     await request.execute();
     unsubscribeFromChannel(this.channelName);
-    unsubscribeFromChannel(this.personalChannelName);
+    unsubscribeFromChannel(await this.getPersonalChannelName());
     return true;
   }
 }

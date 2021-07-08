@@ -26,8 +26,8 @@ describe('Files', () => {
     });
   });
 
-  after(() => {
-    const activeUser = Kinvey.User.getActiveUser();
+  after(async () => {
+    const activeUser = await Kinvey.User.getActiveUser();
     return Kinvey.User.remove(activeUser._id, { hard: true });
   });
 

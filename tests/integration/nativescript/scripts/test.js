@@ -110,7 +110,7 @@ fs.copyFileSync(nativescriptSdkFile, path.join(appPath, 'kinvey-nativescript-sdk
 
 // Update the app package.json
 const appPackageJson = require(path.join(appPath, 'package.json'));
-const newDependencies = Object.assign({}, appPackageJson.dependencies, pkg.dependencies, { 'kinvey-js-sdk': 'file:kinvey-js-sdk.tgz', 'kinvey-nativescript-sdk': 'file:kinvey-nativescript-sdk.tgz' });
+const newDependencies = Object.assign({}, appPackageJson.dependencies, pkg.dependencies, { 'kinvey-js-sdk': 'file:kinvey-js-sdk.tgz', 'kinvey-nativescript-sdk': 'file:kinvey-nativescript-sdk.tgz', 'buffer': '6.0.3' });
 const newAppPackageJson = Object.assign({}, appPackageJson, { dependencies: newDependencies });
 fs.outputFileSync(path.join(appPath, 'package.json'), JSON.stringify(newAppPackageJson, null, 4));
 

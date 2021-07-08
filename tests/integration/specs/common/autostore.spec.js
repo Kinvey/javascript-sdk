@@ -33,9 +33,9 @@ describe('AutoStore', function() {
   //   return null;
   // });
 
-  afterEach('cleanUpAppData', function() {
+  afterEach('cleanUpAppData', async function() {
     // Clean up sample data
-    const activeUser = User.getActiveUser();
+    const activeUser = await User.getActiveUser();
     return cleanUpAppData(collectionName, [activeUser._id]);
   });
 

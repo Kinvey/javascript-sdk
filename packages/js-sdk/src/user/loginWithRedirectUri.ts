@@ -3,10 +3,10 @@ import { ActiveUserError } from '../errors/activeUser';
 import { NotFoundError } from '../errors/notFound';
 import { KinveyError } from '../errors/kinvey';
 import { getAppKey } from '../kinvey';
-import { login } from './login';
 import { loginWithPopup, getTokenWithCode } from './mic';
 import { signup } from './signup';
 import { getActiveUser } from './getActiveUser';
+import { loginWithSocialIdentity } from './loginWithSocialIdentity';
 
 export interface MICOptions {
   micId?: string;
@@ -15,7 +15,7 @@ export interface MICOptions {
 }
 
 export async function loginWithRedirectUri(redirectUri: string, options: MICOptions = {}) {
-  const activeUser = getActiveUser();
+  const activeUser = await getActiveUser();
   const { micId, version } = options;
   let clientId = getAppKey();
 
@@ -37,7 +37,7 @@ export async function loginWithRedirectUri(redirectUri: string, options: MICOpti
   const credentials = { _socialIdentity: socialIdentity };
 
   try {
-    return await login(credentials);
+    return await loginWithSocialIdentity(socialIdentity);
   } catch (error) {
     if (error instanceof NotFoundError) {
       return await signup(credentials);

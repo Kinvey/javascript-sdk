@@ -116,12 +116,15 @@ export class KinveyHttpRequest extends HttpRequest {
     this.headers = new KinveyHttpHeaders(config.headers);
 
     if (config.auth) {
-      this.headers.setAuthorization(config.auth);
       this.auth = config.auth;
     }
   }
 
   async execute(retry = true): Promise<HttpResponse> {
+    if (this.auth) {
+      await this.headers.setAuthorization(this.auth);
+    }
+
     try {
       return await super.execute();
     } catch (error) {
@@ -139,7 +142,7 @@ export class KinveyHttpRequest extends HttpRequest {
           markRefreshTokenRequestInProgress();
 
           // Get existing mic session
-          const activeSession = getSession();
+          const activeSession = await getSession();
           const socialIdentity = (activeSession && activeSession._socialIdentity) || {};
           const micIdentityKey = Object.keys(socialIdentity).find(sessionKey => socialIdentity[sessionKey].identity === 'kinveyAuth');
 
@@ -187,7 +190,7 @@ export class KinveyHttpRequest extends HttpRequest {
                 newSession._socialIdentity[micIdentityKey] = Object.assign({}, newSession._socialIdentity[micIdentityKey], newMICSession);
 
                 // Set the new session
-                setSession(newSession);
+                await setSession(newSession);
 
                 // Redo the original request
                 const request = new KinveyHttpRequest(this);
@@ -216,7 +219,7 @@ export class KinveyHttpRequest extends HttpRequest {
             await request.execute(false);
 
             // Remove the session
-            removeSession();
+            await removeSession();
 
             // Clear cache's
             await QueryCache.clear();

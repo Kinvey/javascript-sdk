@@ -1,6 +1,8 @@
 import { Inject, Injectable } from '@angular/core';
 import { init, User, Query } from '../nativescript';
 import { KinveyConfigToken } from './utils';
+import { LoginOptions } from "kinvey-js-sdk/lib/user/login";
+import { MFACompleteResult, MFAContext } from "kinvey-js-sdk/lib/user/loginWithMFA";
 
 @Injectable({
   providedIn: 'root'
@@ -18,8 +20,22 @@ export class UserService {
     return User.forgotUsername(email, options);
   }
 
-  login(username: string | { username?: string, password?: string, _socialIdentity?: any }, password?: string, options?: any): Promise<User> {
+  login(username: string, password: string, options?: LoginOptions): Promise<User> {
     return User.login(username, password, options);
+  }
+
+  loginWithMFA(
+    username: string,
+    password: string,
+    selectAuthenticator: (authenticators: object[], context: MFAContext) => Promise<string>,
+    mfaComplete: (authenticator: string, context: MFAContext) => Promise<MFACompleteResult>,
+    options: LoginOptions = {}
+  ): Promise<User> {
+    return User.loginWithMFA(username, password, selectAuthenticator, mfaComplete, options);
+  }
+
+  loginWithRecoveryCode(username: string, password: string, recoveryCode: string, options: LoginOptions = {}): Promise<User> {
+    return User.loginWithRecoveryCode(username, password, recoveryCode, options);
   }
 
   loginWithRedirectUri(redirectUri: string, options?: any): Promise<User> {
@@ -70,7 +86,7 @@ export class UserService {
     return User.update(data, options);
   }
 
-  getActiveUser(): User {
+  getActiveUser(): Promise<User> {
     return User.getActiveUser();
   }
 

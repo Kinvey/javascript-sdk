@@ -1,5 +1,7 @@
+import has from 'lodash/has';
 import isString from 'lodash/isString';
 import isPlainObject from 'lodash/isPlainObject';
+import unset from 'lodash/unset';
 import { ActiveUserError } from '../errors/activeUser';
 import { KinveyError } from '../errors/kinvey';
 import { setSession, formatKinveyBaasUrl, HttpRequestMethod, KinveyHttpRequest, KinveyBaasNamespace, KinveyHttpAuth } from '../http';
@@ -11,23 +13,53 @@ export interface LoginOptions {
   timeout?: number;
 }
 
-// export async function login(credentials: { username: string, password: string}, options: LoginOptions = {}): Promise<User>
-export async function login(username: string | { username?: string, password?: string, _socialIdentity?: any }, password?: string, options: LoginOptions = {}) {
-  const activeUser = getActiveUser();
-  let credentials: any = { username, password };
-  let timeout = options.timeout;
-
+export async function validateNoActiveUser() {
+  const activeUser = await getActiveUser();
   if (activeUser) {
     throw new ActiveUserError('An active user already exists. Please logout the active user before you login.');
   }
+}
 
-  if (isPlainObject(username)) {
-    credentials = username;
+export interface LoginRequestBody {
+  username?: string;
+  password?: string;
+  recoveryCode?: string,
+  deviceToken?: string;
+  _socialIdentity?: any;
+}
 
-    if (isPlainObject(password)) {
-      timeout = (password as LoginOptions).timeout;
-    }
+export async function executeLoginRequest(reqBody: LoginRequestBody, timeout?: number): Promise<any> {
+  const request = new KinveyHttpRequest({
+    method: HttpRequestMethod.POST,
+    auth: KinveyHttpAuth.App,
+    url: formatKinveyBaasUrl(KinveyBaasNamespace.User, '/login'),
+    body: reqBody,
+    timeout
+  });
+
+  const response = await request.execute();
+  const { data } = response;
+
+  // Remove sensitive data
+  unset(data, 'password');
+  unset(data, 'user.password');
+
+  if (!has(data, 'mfaRequired')) {
+    return {
+      mfaRequired: false,
+      user: data,
+    };
   }
+
+  if (!data.mfaRequired) {
+    data.user._kmd.authtoken = data.authToken;
+  }
+
+  return data;
+}
+
+export function validateCredentials(username: string, password: string): any {
+  const credentials: any = { username, password };
 
   if (credentials.username) {
     credentials.username = String(credentials.username).trim();
@@ -37,31 +69,23 @@ export async function login(username: string | { username?: string, password?: s
     credentials.password = String(credentials.password).trim();
   }
 
-  if ((!credentials.username || credentials.username === '' || !credentials.password || credentials.password === '') && !credentials._socialIdentity) {
+  if (!credentials.username || credentials.username === '' || !credentials.password || credentials.password === '') {
     throw new KinveyError('Username and/or password missing. Please provide both a username and password to login.');
   }
 
-  const request = new KinveyHttpRequest({
-    method: HttpRequestMethod.POST,
-    auth: KinveyHttpAuth.App,
-    url: formatKinveyBaasUrl(KinveyBaasNamespace.User, '/login'),
-    body: credentials,
-    timeout
-  });
-  const response = await request.execute();
-  const session = response.data;
+  return credentials;
+}
 
-  // Remove sensitive data
-  delete session.password;
+export async function login(username: string, password: string, options: LoginOptions = {}) {
+  await validateNoActiveUser();
 
-  // Merge _socialIdentity
-  if (credentials._socialIdentity) {
-    session._socialIdentity = mergeSocialIdentity(credentials._socialIdentity, session._socialIdentity);
+  const credentials = validateCredentials(username, password);
+  const result = await executeLoginRequest(credentials, options.timeout);
+  if (result.mfaRequired) {
+    throw new KinveyError('MFA login is required.');
   }
 
-  // Store the active session
-  setSession(session);
-
-  // Return the user
-  return new User(session);
+  const { user } = result;
+  await setSession(user);
+  return new User(user);
 }

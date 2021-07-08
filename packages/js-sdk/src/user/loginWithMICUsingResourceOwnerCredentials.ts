@@ -7,6 +7,7 @@ import { login } from './login';
 import { getTokenWithUsernamePassword, GetTokenWithUsernamePasswordOptions } from './mic';
 import { signup } from './signup';
 import { getActiveUser } from './getActiveUser';
+import {loginWithSocialIdentity} from "./loginWithSocialIdentity";
 
 export interface MICOptions extends GetTokenWithUsernamePasswordOptions {
   micId?: string;
@@ -14,7 +15,7 @@ export interface MICOptions extends GetTokenWithUsernamePasswordOptions {
 }
 
 export async function loginWithMICUsingResourceOwnerCredentials(username: string, password: string, options: MICOptions = {}) {
-  const activeUser = getActiveUser();
+  const activeUser = await getActiveUser();
   const { micId } = options;
   let clientId = getAppKey();
 
@@ -34,7 +35,7 @@ export async function loginWithMICUsingResourceOwnerCredentials(username: string
   const credentials = { _socialIdentity: socialIdentity };
 
   try {
-    return await login(credentials);
+    return await loginWithSocialIdentity(socialIdentity);
   } catch (error) {
     if (error instanceof NotFoundError) {
       return await signup(credentials);

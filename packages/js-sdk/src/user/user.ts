@@ -6,11 +6,13 @@ import {
   getSession,
   setSession,
   removeSession,
+  removeMFASession,
+  removeDeviceToken,
   formatKinveyBaasUrl,
   HttpRequestMethod,
   KinveyHttpRequest,
   KinveyBaasNamespace,
-  KinveyHttpAuth
+  KinveyHttpAuth,
 } from '../http';
 import { KinveyError } from '../errors/kinvey';
 import { Entity } from '../storage';
@@ -19,6 +21,13 @@ import { subscribe, unsubscribe, isSubscribed } from '../live';
 import { logger } from '../log';
 import { mergeSocialIdentity } from './utils';
 import { signup } from './signup';
+import {
+  createMFAAuthenticator,
+  CreateMFAAuthenticatorResult,
+  MFAAuthenticator,
+  NewMFAAuthenticator,
+  VerifyContext,
+} from './createMFAAuthenticator';
 
 export interface UserData extends Entity {
   _socialIdentity?: object;
@@ -86,8 +95,8 @@ export class User {
     return undefined;
   }
 
-  isActive() {
-    const activeUser = getSession();
+  async isActive(): Promise<boolean> {
+    const activeUser = await getSession();
     if (activeUser && activeUser._id === this._id) {
       return true;
     }
@@ -111,10 +120,10 @@ export class User {
       method: HttpRequestMethod.GET,
       auth: KinveyHttpAuth.Session,
       url: formatKinveyBaasUrl(KinveyBaasNamespace.User, '/_me'),
-      timeout: options.timeout
+      timeout: options.timeout,
     });
     const response = await request.execute();
-    const data = response.data;
+    const { data } = response;
 
     // Remove sensitive data
     delete data.password;
@@ -125,8 +134,9 @@ export class User {
     }
 
     // Update the active session
-    if (this.isActive()) {
-      setSession(data);
+    if (await this.isActive()) {
+      data._kmd.authtoken = this.authtoken;
+      await setSession(data);
     }
 
     this.data = data;
@@ -167,8 +177,8 @@ export class User {
     }
 
     // Update the active session
-    if (this.isActive()) {
-      setSession(updatedData);
+    if (await this.isActive()) {
+      await setSession(updatedData);
     }
 
     this.data = updatedData;
@@ -215,36 +225,113 @@ export class User {
     return true;
   }
 
-  async logout(options: { timeout?: number } = {}) {
-    if (this.isActive()) {
-      // TODO: unregister push
+  async createAuthenticator(
+    newAuthenticator: NewMFAAuthenticator,
+    verify: (authenticator: MFAAuthenticator, context: VerifyContext) => Promise<string>
+  ): Promise<CreateMFAAuthenticatorResult> {
+    return createMFAAuthenticator(this._id, newAuthenticator, verify);
+  }
 
-      // Unregister from Live Service
-      this.unregisterFromLiveService();
+  async listAuthenticators(): Promise<MFAAuthenticator[]> {
+    const request = new KinveyHttpRequest({
+      method: HttpRequestMethod.GET,
+      auth: KinveyHttpAuth.SessionOrMaster,
+      url: formatKinveyBaasUrl(KinveyBaasNamespace.User, `/${this._id}/authenticators`),
+    });
 
-      try {
-        // Logout
-        const request = new KinveyHttpRequest({
-          method: HttpRequestMethod.POST,
-          auth: KinveyHttpAuth.Session,
-          url: formatKinveyBaasUrl(KinveyBaasNamespace.User, '/_logout'),
-          timeout: options.timeout
-        });
-        await request.execute();
-      } catch (error) {
-        logger.error('Logout request failed.');
-        logger.error(error.message);
-      }
+    const { data } = await request.execute();
+    return data.map((a) => {
+      return { id: a.id, name: a.name, type: a.type };
+    });
+  }
 
-      // Remove the session
-      removeSession();
+  async removeAuthenticator(id: string) {
+    const request = new KinveyHttpRequest({
+      method: HttpRequestMethod.DELETE,
+      auth: KinveyHttpAuth.SessionOrMaster,
+      url: formatKinveyBaasUrl(KinveyBaasNamespace.User, `/${this._id}/authenticators/${id}/`),
+    });
 
-      // Clear cache's
-      await QueryCache.clear();
-      await SyncCache.clear();
-      await DataStoreCache.clear();
+    await request.execute();
+    return null;
+  }
+
+  async listRecoveryCodes(): Promise<string[]> {
+    const request = new KinveyHttpRequest({
+      method: HttpRequestMethod.GET,
+      auth: KinveyHttpAuth.SessionOrMaster,
+      url: formatKinveyBaasUrl(KinveyBaasNamespace.User, `/${this._id}/recovery-codes`),
+    });
+
+    const { data } = await request.execute();
+    return data.recoveryCodes;
+  }
+
+  async regenerateRecoveryCodes(): Promise<string[]> {
+    const request = new KinveyHttpRequest({
+      method: HttpRequestMethod.POST,
+      auth: KinveyHttpAuth.SessionOrMaster,
+      url: formatKinveyBaasUrl(KinveyBaasNamespace.User, `/${this._id}/recovery-codes`),
+    });
+
+    const { data } = await request.execute();
+    return data.recoveryCodes;
+  }
+
+  async isMFAEnabled(): Promise<boolean> {
+    return (await this.listAuthenticators()).length > 0;
+  }
+
+  async disableMFA(): Promise<any> {
+    const authenticators = await this.listAuthenticators();
+    await Promise.all(authenticators.map((a) => this.removeAuthenticator(a.id)));
+    return true;
+  }
+
+  async _cleanup(kinveyRequest, operationName, cleanEntireSessionStore = false) {
+    if (!(await this.isActive())) {
+      return this;
     }
 
+    this.unregisterFromLiveService();
+    // TODO: unregister push
+
+    try {
+      await kinveyRequest.execute();
+    } catch (error) {
+      logger.error(`${operationName} failed.`);
+      logger.error(error.message);
+    }
+
+    await removeSession();
+    if (cleanEntireSessionStore) {
+      await removeMFASession();
+      await removeDeviceToken(this.data.username);
+    }
+
+    await QueryCache.clear();
+    await SyncCache.clear();
+    await DataStoreCache.clear();
     return this;
+  }
+
+  async logout(options: { timeout?: number } = {}) {
+    const request = new KinveyHttpRequest({
+      method: HttpRequestMethod.POST,
+      auth: KinveyHttpAuth.Session,
+      url: formatKinveyBaasUrl(KinveyBaasNamespace.User, '/_logout'),
+      timeout: options.timeout,
+    });
+    return this._cleanup(request, 'Logout request');
+  }
+
+  async invalidateTokens() {
+    const request = new KinveyHttpRequest({
+      method: HttpRequestMethod.DELETE,
+      auth: KinveyHttpAuth.Session,
+      url: formatKinveyBaasUrl(KinveyBaasNamespace.User, `/${this._id}/tokens`),
+    });
+
+    return this._cleanup(request, 'Tokens invalidation', true);
   }
 }

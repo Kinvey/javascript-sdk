@@ -21,8 +21,8 @@ describe('Files', function() {
     });
   });
 
-  after(function() {
-    const activeUser = Kinvey.User.getActiveUser();
+  after(async function() {
+    const activeUser = await Kinvey.User.getActiveUser();
     console.log(activeUser);
     if (activeUser) {
       return Kinvey.User.remove(activeUser._id, { hard: true });

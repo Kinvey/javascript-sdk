@@ -1,8 +1,8 @@
 import { getSession } from '../http';
 import { User } from './user';
 
-export function getActiveUser() {
-  const session = getSession();
+export async function getActiveUser() {
+  const session = await getSession();
 
   if (session) {
     return new User(session);

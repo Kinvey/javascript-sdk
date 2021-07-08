@@ -9,7 +9,8 @@ import {
   Errors,
   Kmd,
   Query,
-  AuthorizationGrant
+  AuthorizationGrant,
+  MFA
 } from '../nativescript';
 import { DataStoreService } from './datastore.service';
 import { EndpointService } from './endpoint.service';
@@ -61,5 +62,7 @@ export {
 
   // User
   UserService,
-  AuthorizationGrant
+  AuthorizationGrant,
+
+  MFA
 };

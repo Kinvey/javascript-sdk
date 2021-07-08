@@ -5,7 +5,7 @@ import { getActiveUser } from './getActiveUser';
 
 export async function remove(id: string, options: { timeout?: number, hard?: boolean } = {}) {
   const { hard } = options;
-  const activeUser = getActiveUser();
+  const activeUser = await getActiveUser();
 
   if (!id) {
     throw new KinveyError('An id was not provided.');

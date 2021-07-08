@@ -54,29 +54,27 @@ describe('Live-services', function() {
       .then(() => networkStore.save(entity2));
   });
 
-  afterEach(() => {
-    const activeUser = Kinvey.User.getActiveUser();
+  afterEach(async () => {
+    const activeUser = await Kinvey.User.getActiveUser();
     if (activeUser) {
       return activeUser.unregisterFromLiveService();
     }
   });
 
-  it('should register user for live services', (done) => {
-    const activeUser = Kinvey.User.getActiveUser();
-    activeUser.registerForLiveService()
+  it('should register user for live services', async () => {
+    const activeUser = await Kinvey.User.getActiveUser();
+    return activeUser.registerForLiveService()
       .then((res) => {
         expect(res).to.equal(true);
         if (Kinvey.StorageProvider.Memory === undefined && Kinvey.StorageProvider.SQLite === undefined){
           expect(checkLocalStorageForSubscriptionKey()).to.equal(true);
         }
-        done();
-      })
-      .catch(done);
+      });
   });
 
   xit('should subscribe user and receive messages for created items', (done) => {
-    const activeUser = Kinvey.User.getActiveUser();
-    activeUser.registerForLiveService()
+    Kinvey.User.getActiveUser()
+      .then(activeUser => activeUser.registerForLiveService())
       .then((res) => {
         expect(res).to.equal(true);
         if (Kinvey.StorageProvider.Memory === undefined && Kinvey.StorageProvider.SQLite === undefined){
@@ -112,8 +110,8 @@ describe('Live-services', function() {
     const updatedEntity = Object.assign({}, entity1)
     updatedEntity.textField = 'updatedField';
 
-    const activeUser = Kinvey.User.getActiveUser();
-    activeUser.registerForLiveService()
+    Kinvey.User.getActiveUser()
+      .then(activeUser => activeUser.registerForLiveService())
       .then((res) => {
         expect(res).to.equal(true);
         if (Kinvey.StorageProvider.Memory === undefined && Kinvey.StorageProvider.SQLite === undefined){

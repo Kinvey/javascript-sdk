@@ -1,13 +1,13 @@
-export function get(key: string) {
+export async function get(key: string): Promise<string> {
   return window.localStorage.getItem(key);
 }
 
-export function set(key: string, session: string) {
+export async function set(key: string, session: string): Promise<boolean> {
   window.localStorage.setItem(key, session);
   return true;
 }
 
-export function remove(key: string): boolean {
+export async function remove(key: string): Promise<boolean> {
   window.localStorage.removeItem(key);
   return true;
 }

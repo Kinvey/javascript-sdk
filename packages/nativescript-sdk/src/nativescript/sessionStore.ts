@@ -1,12 +1,12 @@
 import { SecureStorage } from '@nativescript/secure-storage';
 import * as live from './live';
 
-export function get(key: string) {
+export async function get(key: string): Promise<string> {
   const secureStorage = new SecureStorage();
   return secureStorage.getSync({ key });
 }
 
-export function set(key: string, session: string): boolean {
+export async function set(key: string, session: string): Promise<boolean> {
   const secureStorage = new SecureStorage();
   const result = secureStorage.setSync({
     key,
@@ -20,7 +20,7 @@ export function set(key: string, session: string): boolean {
   return result;
 }
 
-export function remove(key: string): boolean {
+export async function remove(key: string): Promise<boolean> {
   const secureStorage = new SecureStorage();
   const result = secureStorage.removeSync({ key });
 

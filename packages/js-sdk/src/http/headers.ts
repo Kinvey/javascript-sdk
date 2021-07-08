@@ -4,7 +4,7 @@ import isArray from 'lodash/isArray';
 import { Base64 } from 'js-base64';
 import { KinveyError } from '../errors/kinvey';
 import { getAppKey, getAppSecret, getMasterSecret, getApiVersion } from '../kinvey';
-import { getSession } from './session';
+import { getSession, getMFASessionToken } from './session';
 
 function byteCount(str: string): number {
   if (str) {
@@ -111,7 +111,9 @@ export enum KinveyHttpAuth {
   Master = 'Master',
   Session = 'Session',
   SessionOrApp = 'SessionOrApp',
-  SessionOrMaster = 'SessionOrMaster'
+  SessionOrMaster = 'SessionOrMaster',
+  MFASessionToken = 'MFASessionToken',
+  SessionOrMFASessionTokenOrMaster = 'SessionOrMFASessionTokenOrMaster'
 }
 
 const globalHeaders = new HttpHeaders();
@@ -154,11 +156,12 @@ export class KinveyHttpHeaders extends HttpHeaders {
     return this.get('X-Kinvey-Request-Start');
   }
 
-  setAuthorization(auth: KinveyHttpAuth): void {
+  async setAuthorization(auth: KinveyHttpAuth): Promise<void> {
     const appKey = getAppKey();
     const appSecret = getAppSecret();
     const masterSecret = getMasterSecret();
-    const session = getSession();
+    const session = await getSession();
+    const mfaSessionToken = await getMFASessionToken();
     let value = '';
 
     if (auth === KinveyHttpAuth.App) {
@@ -178,27 +181,42 @@ export class KinveyHttpHeaders extends HttpHeaders {
         throw new KinveyError('There is no active user to authorize the request.');
       }
       value = `Kinvey ${session._kmd.authtoken}`;
+    } else if (auth === KinveyHttpAuth.MFASessionToken) {
+      if (!mfaSessionToken) {
+        throw new KinveyError('Missing MFA session token to authorize the request.');
+      }
+      value = `KinveyMFA ${mfaSessionToken}`;
     } else if (auth === KinveyHttpAuth.All) {
       try {
-        return this.setAuthorization(KinveyHttpAuth.Session);
+        return await this.setAuthorization(KinveyHttpAuth.Session);
       } catch (error) {
         try {
-          return this.setAuthorization(KinveyHttpAuth.App);
+          return await this.setAuthorization(KinveyHttpAuth.App);
         } catch (error) {
-          return this.setAuthorization(KinveyHttpAuth.Master);
+          return await this.setAuthorization(KinveyHttpAuth.Master);
         }
       }
     } else if (auth === KinveyHttpAuth.SessionOrApp) {
       try {
-        return this.setAuthorization(KinveyHttpAuth.Session);
+        return await this.setAuthorization(KinveyHttpAuth.Session);
       } catch (error) {
-        return this.setAuthorization(KinveyHttpAuth.App);
+        return await this.setAuthorization(KinveyHttpAuth.App);
       }
     } else if (auth === KinveyHttpAuth.SessionOrMaster) {
       try {
-        return this.setAuthorization(KinveyHttpAuth.Session);
+        return await this.setAuthorization(KinveyHttpAuth.Session);
       } catch (error) {
-        return this.setAuthorization(KinveyHttpAuth.Master);
+        return await this.setAuthorization(KinveyHttpAuth.Master);
+      }
+    } else if (auth === KinveyHttpAuth.SessionOrMFASessionTokenOrMaster) {
+      try {
+        return await this.setAuthorization(KinveyHttpAuth.Session);
+      } catch (error) {
+        try {
+          return await this.setAuthorization(KinveyHttpAuth.MFASessionToken);
+        } catch (error) {
+          return await this.setAuthorization(KinveyHttpAuth.Master);
+        }
       }
     }
 

@@ -11,7 +11,8 @@ import {
   Errors,
   Kmd,
   Query,
-  AuthorizationGrant
+  AuthorizationGrant,
+  MFA
 } from 'kinvey-js-sdk';
 import * as Files from './files';
 import { User } from './user';
@@ -63,5 +64,7 @@ export {
 
   // User
   User,
-  AuthorizationGrant
+  AuthorizationGrant,
+
+  MFA
 };

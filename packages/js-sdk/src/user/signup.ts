@@ -7,7 +7,7 @@ import { getActiveUser } from './getActiveUser';
 import { User } from './user';
 
 export async function signup(data?: object | User, options: { timeout?: number, state?: boolean } = {}) {
-  const activeUser = getActiveUser();
+  const activeUser = await getActiveUser();
   const { state = true } = options;
 
   if (data && !isPlainObject(data)) {
@@ -35,7 +35,7 @@ export async function signup(data?: object | User, options: { timeout?: number, 
   const session = response.data;
 
   if (state === true) {
-    setSession(session);
+    await setSession(session);
   }
 
   return new User(session);

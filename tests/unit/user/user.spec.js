@@ -49,8 +49,8 @@ function randomString(size = 18, prefix = '') {
 }
 
 class UserMock extends User {
-  static getActiveUser() {
-    const activeUser = getActiveUser();
+  static async getActiveUser() {
+    const activeUser = await getActiveUser();
 
     if (activeUser) {
       return new UserMock(activeUser.data);
@@ -165,8 +165,8 @@ class UserMock extends User {
     return super.logout(options);
   }
 
-  static logout(options = {}) {
-    const user = UserMock.getActiveUser(options.client);
+  static async logout(options = {}) {
+    const user = await UserMock.getActiveUser(options.client);
 
     if (user) {
       return user.logout(options);
@@ -380,13 +380,13 @@ describe('User', () => {
           return UserMock.login('test', 'test', client.appKey);
         })
         .then((user) => {
-          expect(user.isActive()).toEqual(true);
+          expect(user.isActive()).to.eventually.equal(true);
         });
     });
 
     it('should return false', () => {
       const user = new User();
-      expect(user.isActive()).toEqual(false);
+      expect(user.isActive()).to.eventually.equal(false);
     });
   });
 
@@ -511,9 +511,9 @@ describe('User', () => {
           expect(user._kmd.authtoken).toEqual(reply._kmd.authtoken);
           expect(user.username).toEqual(reply.username);
           expect(user.data.password).toEqual(undefined);
-          expect(user.isActive()).toEqual(true);
+          expect(user.isActive()).to.eventually.equal(true);
 
-          const storedUser = getActiveUser();
+          const storedUser = await getActiveUser();
           expect(storedUser.password).toEqual(undefined);
         });
     });
@@ -684,31 +684,31 @@ describe('User', () => {
         });
     });
 
-    afterEach(() => {
-      const user = getActiveUser();
+    afterEach(async () => {
+      const user = await getActiveUser();
       expect(user).toEqual(null);
     });
 
-    it('should logout the active user', () => {
+    it('should logout the active user', async () => {
       return UserMock.logout(client.appKey)
         .then(() => {
-          expect(getActiveUser()).toEqual(null);
+          expect(await getActiveUser()).toEqual(null);
         });
     });
 
-    it('should logout when there is not an active user', () => {
+    it('should logout when there is not an active user', async () => {
       return UserMock.logout(client.appKey)
         .then(() => {
-          expect(getActiveUser()).toEqual(null);
+          expect(await getActiveUser()).toEqual(null);
         })
         .then(() => logout(client.appKey))
         .then(() => {
-          expect(getActiveUser()).toEqual(null);
+          expect(await getActiveUser()).toEqual(null);
         });
     });
 
-    it.skip('should unregister user from Live Service', () => {//TODO: logout seems to no unregister user from live services
-      const activeUser = getActiveUser();
+    it.skip('should unregister user from Live Service', async () => {//TODO: logout seems to no unregister user from live services
+      const activeUser = await getActiveUser();
       const spy = expect.spyOn(activeUser, 'unregisterFromLiveService')
         .andReturn(Promise.resolve());
 
@@ -728,8 +728,8 @@ describe('User', () => {
       return UserMock.login(randomString(), randomString(), client.appKey);
     });
 
-    beforeEach(() => {
-      activeUser = getActiveUser();
+    beforeEach(async () => {
+      activeUser = await getActiveUser();
       liveService = getLiveService(Client.sharedInstance());
     });
 
@@ -764,8 +764,8 @@ describe('User', () => {
       let activeUser;
       let liveService;
 
-      beforeEach(() => {
-        activeUser = User.getActiveUser();
+      beforeEach(async () => {
+        activeUser = await User.getActiveUser();
         liveService = getLiveService(Client.sharedInstance());
       });
 
@@ -799,47 +799,47 @@ describe('User', () => {
       return UserMock.logout(client.appKey);
     });
 
-    it('should signup and set the user as the active user', () => {
+    it('should signup and set the user as the active user', async () => {
       return UserMock.signup({ username: randomString(), password: randomString() }, {}, client.appKey)
         .then((user) => {
-          expect(user.isActive()).toEqual(true);
-          expect(user).toEqual(getActiveUser());
+          expect(user.isActive()).to.eventually.equal(true);
+          expect(user).toEqual(await getActiveUser());
         });
     });
 
-    it('should signup with a user and set the user as the active user', () => {
+    it('should signup with a user and set the user as the active user', async () => {
       const user = new UserMock({ username: randomString(), password: randomString() });
       return UserMock.signup(user, {}, client.appKey)
         .then((user) => {
-          expect(user.isActive()).toEqual(true);
-          expect(user).toEqual(getActiveUser());
+          expect(user.isActive()).to.eventually.equal(true);
+          expect(user).toEqual(await getActiveUser());
         });
     });
 
-    it('should signup user and not set the user as the active user', () => {
+    it('should signup user and not set the user as the active user', async () => {
       return UserMock.signup({ username: randomString(), password: randomString() }, { state: false }, client.appKey)
         .then((user) => {
-          expect(user.isActive()).toEqual(false);
-          expect(getActiveUser()).toEqual(null);
+          expect(user.isActive()).to.eventually.equal(false);
+          expect(await getActiveUser()).toEqual(null);
         });
     });
 
-    it('should signup an implicit user and set the user as the active user', () => {
+    it('should signup an implicit user and set the user as the active user', async () => {
       return UserMock.signup(null, {}, client.appKey)
         .then((user) => {
-          expect(user.isActive()).toEqual(true);
-          expect(user).toEqual(getActiveUser());
+          expect(user.isActive()).to.eventually.equal(true);
+          expect(user).toEqual(await getActiveUser());
         });
     });
 
-    it.skip('should merge the signup data and set the user as the active user', () => {
+    it.skip('should merge the signup data and set the user as the active user', async () => {
       const user = new UserMock({ username: randomString(), password: randomString() });
       const username = 'foo';
       return user.signup({ username: username }, {}, client.appKey)
         .then((user) => {
-          expect(user.isActive()).toEqual(true);
+          expect(user.isActive()).to.eventually.equal(true);
           expect(user.username).toEqual(username);
-          expect(user).toEqual(getActiveUser());
+          expect(user).toEqual(await getActiveUser());
         });
     });
 
@@ -853,14 +853,14 @@ describe('User', () => {
         });
     });
 
-    it('should not throw an error with an active user and options.state set to false', () => {
+    it('should not throw an error with an active user and options.state set to false', async () => {
       return UserMock.login(randomString(), randomString(), client.appKey)
         .then(() => {
           return UserMock.signup({ username: randomString(), password: randomString() }, { state: false }, client.appKey);
         })
         .then((user) => {
-          expect(user.isActive()).toEqual(false);
-          expect(user).toNotEqual(UserMock.getActiveUser());
+          expect(user.isActive()).to.eventually.equal(false);
+          expect(user).toNotEqual(await UserMock.getActiveUser());
         });
     });
   });
@@ -875,7 +875,7 @@ describe('User', () => {
         });
     });
 
-    it('should update the active user', () => {
+    it('should update the active user', async () => {
       const pathname = `/user/${client.appKey}`;
       return UserMock.logout(client.appKey)
         .then(() => {
@@ -894,7 +894,7 @@ describe('User', () => {
           return user.update({ email: email })
             .then((resultingUser) => {
               expect(resultingUser.data).toEqual(responseData);
-              const activeUser = getActiveUser();
+              const activeUser = await getActiveUser();
               expect(activeUser.data).toEqual(responseData);
             });
         });
@@ -929,12 +929,12 @@ describe('User', () => {
   });
 
   describe('me()', () => {
-    beforeEach('login a user', () => {
+    beforeEach('login a user', async () => {
       const username = randomString();
       const password = randomString();
       return UserMock.login(username, password, client.appKey)
         .then((user) => {
-          const activeUser = getActiveUser();
+          const activeUser = await getActiveUser();
           expect(activeUser.username).toEqual(username);
         })
         .catch((err) => { throwError(err) })
@@ -981,9 +981,9 @@ describe('User', () => {
         });
     });
 
-    it('should update active user', () => {
+    it('should update active user', async () => {
       const pathname = `/user/${client.appKey}`;
-      const user = getActiveUser();
+      const user = await getActiveUser();
       const reply = {
         _id: user._id,
         username: randomString()
@@ -996,7 +996,7 @@ describe('User', () => {
 
       return user.me()
         .then((user) => {
-          expect(user.data).toEqual(getActiveUser().data);
+          expect(user.data).toEqual(await getActiveUser().data);
         });
     });
 
@@ -1007,20 +1007,20 @@ describe('User', () => {
   });
 
   describe('getActiveUser()', () => {
-    it('should return the active user', () => {
+    it('should return the active user', async () => {
       return UserMock.logout(client.appKey)
         .then(() => {
           return UserMock.login(randomString(), randomString(), client.appKey);
         })
         .then((user) => {
-          expect(getActiveUser()).toEqual(user);
+          expect(await getActiveUser()).toEqual(user);
         });
     });
 
-    it('should return null with no active user', () => {
+    it('should return null with no active user', async () => {
       return UserMock.logout(client.appKey)
         .then(() => {
-          expect(getActiveUser()).toEqual(null);
+          expect(await getActiveUser()).toEqual(null);
         });
     });
   });

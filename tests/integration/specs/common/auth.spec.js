@@ -21,15 +21,6 @@ describe('Auth', function() {
       expect(user.username).to.equal(username);
       await User.remove(user._id, { hard: true });
     });
-
-    it('should login by providing credentials as an object', async function() {
-      const username = randomString();
-      const password = randomString();
-      await User.signup({ username, password }, { state: false });
-      const user = await User.login({ username, password });
-      expect(user.username).to.equal(username);
-      await User.remove(user._id, { hard: true });
-    });
   });
 
   describe('logout()', function() {
@@ -38,15 +29,15 @@ describe('Auth', function() {
       const password = randomString();
       const user = await User.signup({ username, password });
       await User.logout();
-      expect(User.getActiveUser()).to.be.null;
-      await User.login({ username, password });
+      expect(await User.getActiveUser()).to.be.null;
+      await User.login(username, password);
       await User.remove(user._id, { hard: true });
     });
 
     it('should logout when there is not an active user', async function() {
-      expect(User.getActiveUser()).to.be.null;
+      expect(await User.getActiveUser()).to.be.null;
       await User.logout();
-      expect(User.getActiveUser()).to.be.null;
+      expect(await User.getActiveUser()).to.be.null;
     });
   });
 
@@ -55,7 +46,7 @@ describe('Auth', function() {
       const username = randomString();
       const password = randomString();
       const user = await User.signup({ username, password });
-      expect(User.getActiveUser()).to.deep.equal(user);
+      expect(await User.getActiveUser()).to.deep.equal(user);
       await User.remove(user._id, { hard: true });
     });
 
@@ -72,14 +63,14 @@ describe('Auth', function() {
       const username = randomString();
       const password = randomString();
       const user = await User.signup({ username, password }, { state: false });
-      expect(User.getActiveUser()).to.be.null;
-      await User.login({ username, password });
+      expect(await User.getActiveUser()).to.be.null;
+      await User.login(username, password);
       await User.remove(user._id, { hard: true });
     });
 
     it('should signup and not set the user as the active user if options.state is false', async function() {
       const user = await User.signup();
-      expect(User.getActiveUser()).to.deep.equal(user);
+      expect(await User.getActiveUser()).to.deep.equal(user);
       await User.remove(user._id, { hard: true });
     });
   });

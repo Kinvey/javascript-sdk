@@ -3,6 +3,7 @@ import axios from 'axios';
 import _ from 'lodash';
 import * as Kinvey from '__SDK__';
 import * as Constants from './constants';
+import totp from 'totp.js';
 
 export function ensureArray(entities) {
   return [].concat(entities);
@@ -340,7 +341,7 @@ export async function cleanUpCollection(config, collectionName, requestLib) {
   }
 
   try {
-    const token = toBase64(`${config.appKey}:${config.masterSecret}`);
+    const token = getToken(config);
     response = await requestLib({
       headers: {
         Authorization: `Basic ${token}`,
@@ -372,6 +373,88 @@ export async function cleanUpCollection(config, collectionName, requestLib) {
   return null;
 }
 
+// Create a user with MFA enabled (with verified authenticator).
+export async function setupUserWithMFA(appCredentials, shouldLogoutUser = true) {
+  await Kinvey.User.logout();
+  const username = randomString();
+  const password = randomString();
+  const createdUser = await Kinvey.User.signup({ username: username, password: password });
+  const userAuthenticator = await createVerifiedAuthenticator();
+  if (shouldLogoutUser) {
+    await Kinvey.User.logout();
+  }
+
+  return {
+    username,
+    password,
+    createdUser,
+    userAuthenticator
+  };
+}
+
+function buildBaasUrl(path) {
+  const instanceId = process.env.INSTANCE_ID;
+  const isLocalhost = instanceId && instanceId.includes('localhost');
+  let protocol;
+  let domain;
+  if (isLocalhost) {
+    protocol = 'http';
+    domain = instanceId;
+  } else {
+    protocol = 'https';
+    domain = instanceId ? `${instanceId}-baas.kinvey.com` : 'baas.kinvey.com';
+  }
+
+  return `${protocol}://${domain}${path}`;
+}
+
+export function generateMFACode(authenticator) {
+  return new totp(authenticator.config.secret).genOTP();
+}
+
+export async function createVerifiedAuthenticator() {
+  const result = await Kinvey.MFA.Authenticators.create({ name: 'js-sdk-tests', type: "totp" }, generateMFACode);
+  const authenticator = result.authenticator;
+  authenticator.recoveryCodes = result.recoveryCodes || [];
+  return authenticator;
+}
+
+export async function removeAuthenticator(user, authenticatorId) {
+  return user.removeAuthenticator(authenticatorId)
+}
+
+async function makeRequest(reqOpts, expectSuccess, requestLib) {
+  let response;
+
+  if (!requestLib) {
+    requestLib = axios;
+  }
+
+  try {
+    response = await requestLib(reqOpts);
+  } catch (error) {
+    if (error.response) {
+      response = error.response;
+    }
+
+    throw error;
+  }
+
+  if (!response.status) {
+    response.status = response.statusCode;
+  }
+
+  if (expectSuccess && (response.status < 200 || response.status > 299)) {
+    throw new Error(`Status code is not 2xx (${reqOpts.url}): ${JSON.stringify(response)}`);
+  }
+
+  return response;
+}
+
+function getToken(config) {
+  return toBase64(`${config.appKey}:${config.masterSecret}`);
+}
+
 function toBase64(textString) {
   if (typeof Buffer !== 'undefined') {
     return Buffer.from(textString).toString('base64')
@@ -387,5 +470,15 @@ function toBase64(textString) {
     return base64String;
   } else {
     throw new Error("Missing base64 conversion.");
+  }
+}
+
+// The 'buffer' module require hack is needed only for totp.js to work for {N} tests
+export function tryRequireBuffer() {
+  try {
+    global.Buffer = require('buffer/').Buffer;
+  }
+  catch (e) {
+    console.log('tryRequireBuffer(): Buffer could not be loaded.');
   }
 }

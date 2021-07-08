@@ -9,7 +9,10 @@ import {
   Errors,
   Kmd,
   Query,
-  AuthorizationGrant
+  AuthorizationGrant,
+  LoginOptions,
+  MFAContext,
+  MFACompleteResult
 } from 'kinvey-html5-sdk';
 import { DataStoreService } from './datastore.service';
 import { EndpointService } from './endpoint.service';
@@ -17,6 +20,7 @@ import { FilesService } from './files.service';
 import { KinveyModule } from './kinvey.module';
 import { PingService } from './ping.service';
 import { UserService } from './user.service';
+import { MFAService } from "./mfa.service";
 
 export {
   // Init
@@ -61,5 +65,9 @@ export {
 
   // User
   UserService,
-  AuthorizationGrant
+  AuthorizationGrant,
+  LoginOptions,
+  MFAContext,
+  MFACompleteResult,
+  MFAService
 };

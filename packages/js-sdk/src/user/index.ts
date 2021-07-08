@@ -2,6 +2,8 @@ import { Query } from '../query';
 import { exists, ExistsOptions } from './exists';
 import { forgotUsername, ForgotUsernameOptions } from './forgotUsername';
 import { login, LoginOptions } from './login';
+import { loginWithMFA, MFACompleteResult, MFAContext } from './loginWithMFA';
+import { loginWithRecoveryCode } from './loginWithRecoveryCode';
 import { loginWithRedirectUri, MICOptions } from './loginWithRedirectUri';
 import { loginWithMICUsingResourceOwnerCredentials } from './loginWithMICUsingResourceOwnerCredentials';
 import { loginWithMIC, AuthorizationGrant } from './loginWithMIC';
@@ -19,6 +21,7 @@ import { User as KinveyUser } from './user';
 import { verifyEmail, VerifyEmailOptions } from './verifyEmail';
 import { registerForLiveService } from './registerForLiveService';
 import { unregisterFromLiveService } from './unregisterFromLiveService';
+import { invalidateTokens } from './invalidateTokens';
 
 
 export { AuthorizationGrant };
@@ -32,8 +35,26 @@ export class User extends KinveyUser {
     return forgotUsername(email, options);
   }
 
-  static login(username: string | { username?: string, password?: string, _socialIdentity?: any }, password?: string, options?: LoginOptions) {
+  static invalidateTokens() {
+    return invalidateTokens();
+  }
+
+  static login(username: string, password: string, options?: LoginOptions) {
     return login(username, password, options);
+  }
+
+  static loginWithMFA(
+    username: string,
+    password: string,
+    selectAuthenticator: (authenticators: object[], context: MFAContext) => Promise<string>,
+    mfaComplete: (authenticator: string, context: MFAContext) => Promise<MFACompleteResult>,
+    options: LoginOptions = {}
+  ) {
+    return loginWithMFA(username, password, selectAuthenticator, mfaComplete, options);
+  }
+
+  static loginWithRecoveryCode(username: string, password: string, recoveryCode: string, options: LoginOptions = {}) {
+    return loginWithRecoveryCode(username, password, recoveryCode, options);
   }
 
   static loginWithRedirectUri(redirectUri: string, options?: MICOptions) {
