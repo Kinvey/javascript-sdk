@@ -7,10 +7,11 @@
     "test-unit": "npm run test-unit:js && npm run test-unit:react-native",
     "test-unit:js": "lerna run build --scope kinvey-js-sdk --stream && lerna run test --scope kinvey-js-sdk --stream",
     "test-unit:react-native": "lerna run build --scope kinvey-react-native-sdk --stream && lerna run test --scope kinvey-react-native-sdk --stream",
-    "test-integration": "npm run test-integration:html5 && npm run test-integration:nativescript && npm run test-integration:node",
+    "test-integration": "npm run test-integration:html5 && npm run test-integration:nativescript && npm run test-integration:node && npm run test-integration:react-native",
     "test-integration:html5": "cd tests/integration && npm i && cd html5 && npm i --no-audit && npm test",
     "test-integration:html5-debug": "cd tests/integration && npm i && cd html5 && npm i --no-audit && npm run test-debug",
     "test-integration:nativescript": "cd tests/integration && npm i && cd nativescript && npm i --no-audit && npm test",
+    "test-integration:react-native": "cd tests/integration && npm i && cd react-native && npm i --no-audit && npm test",
     "test-integration:node": "cd tests/integration && npm i && cd node && npm i --no-audit && npm test",
     "test-integration:node-debug": "cd tests/integration && npm i && cd node && npm i --no-audit && npm run test-debug"
   },

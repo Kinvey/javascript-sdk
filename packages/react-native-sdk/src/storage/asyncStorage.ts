@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-community/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 async function getTable(dbName: string, tableName: string): Promise<Map<string, any>> {
   const data = await AsyncStorage.getItem(`${dbName}.${tableName}`);

@@ -3,7 +3,7 @@ import * as Kinvey from '__SDK__';
 import * as utilities from '../utils';
 
 describe('Files', function() {
-  this.retries(4);
+  // this.retries(4);
   const stringContent = utilities.randomString();
   const blob = new Blob([stringContent]);
   const file = new File([stringContent], utilities.randomString());

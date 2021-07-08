@@ -1,4 +1,4 @@
-import * as AsyncStorage from '../asyncStorage';
+import * as AsyncStorage from '../src/storage/asyncStorage';
 
 const DB_NAME = 'TEST_DB';
 const TABLE_NAME = 'TEST_TABLE';

@@ -10,5 +10,5 @@
     "resolveJsonModule": true,
     "downlevelIteration": true
   },
-  "exclude": ["node_modules", "src/**/__tests__", "demo"]
+  "exclude": ["node_modules", "src/**/__tests__", "test", "demo"]
 }

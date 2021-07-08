@@ -18,7 +18,7 @@
   "dependencies": {
     "events": "3.0.0",
     "js-base64": "2.5.1",
-    "lodash": "4.17.15",
+    "lodash": "4.17.21",
     "loglevel": "1.6.3",
     "loglevel-plugin-prefix": "0.8.4",
     "p-queue": "~6.1.0",

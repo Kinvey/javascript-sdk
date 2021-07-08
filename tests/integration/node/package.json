@@ -7,7 +7,7 @@
     "symlink-js-sdk": "symlink-dir ../../../packages/js-sdk ../../../packages/node_modules/kinvey-js-sdk",
     "build-js-sdk": "cd ../../../packages/js-sdk && npm run build",
     "build": "cd ../../../packages/node-sdk/ && npm i --no-audit && rimraf node_modules/kinvey-js-sdk && npm run build",
-    "pretest": "npm run symlink-js-sdk && npm run build-js-sdk && npm run build && node ../setup.js --target=node && node scripts/test.js",
+    "pretest": "npm run symlink-js-sdk && npm run build-js-sdk && npm run build && node ../setup.js --target=node && node ../copy-specs.js --target=node",
     "test": "mocha --opts mocha.opts \"test/**/*.spec.js\" || (npm run posttest && exit 1)",
     "test-debug": "npm run pretest && mocha --opts mocha.opts \"test/**/*.spec.js\"",
     "posttest": "node ../clean.js --target=node"
@@ -23,8 +23,6 @@
     "chai": "~4.2.0",
     "core-js": "^3.0.1",
     "dotenv": "~7.0.0",
-    "fs-extra": "~8.1.0",
-    "glob-promise": "~3.4.0",
     "mocha": "~6.0.2",
     "rimraf": "~3.0.2",
     "sinon": "~7.3.1",

@@ -7,7 +7,7 @@
     "symlink-js-sdk": "symlink-dir ../../../packages/js-sdk ../../../packages/node_modules/kinvey-js-sdk",
     "build-js-sdk": "cd ../../../packages/js-sdk && npm run build",
     "build": "cd ../../../packages/html5-sdk/ && npm i --no-audit && rimraf node_modules/kinvey-js-sdk && npm run build",
-    "pretest": "npm run symlink-js-sdk && npm run build-js-sdk && npm run build && node ../setup.js --target=html5 && node scripts/test.js",
+    "pretest": "npm run symlink-js-sdk && npm run build-js-sdk && npm run build && node ../setup.js --target=html5 && node ../copy-specs.js --target=html5",
     "test": "karma start karma.conf.js --browsers=ChromeHeadless_without_security || (npm run posttest && exit 1)",
     "test-debug": "npm run pretest && karma start karma.conf.js --browsers=Chrome_without_security --single-run=false; npm run posttest",
     "posttest": "node ../clean.js --target=html5"
@@ -23,8 +23,6 @@
     "chai": "~4.2.0",
     "core-js": "^3.0.1",
     "dotenv": "~7.0.0",
-    "fs-extra": "~8.1.0",
-    "glob-promise": "~3.4.0",
     "idb": "~4.0.4",
     "karma": "~4.0.1",
     "karma-chrome-launcher": "~2.2.0",

@@ -9,7 +9,7 @@ const multiSaveErrorMessage = 'Unable to save an array of entities. Use "create"
 const multiInsertErrorMessage = 'Unable to create an array of entities. Please create entities one by one or use API version 5 or newer.';
 
 describe('AutoStore', function() {
-  this.retries(4);
+  // this.retries(4);
   before(function() {
     // Initialize the SDK
     return init({
@@ -33,13 +33,14 @@ describe('AutoStore', function() {
   //   return null;
   // });
 
-  afterEach('cleanUpAppData', async function() {
+  afterEach(async function() {
     // Clean up sample data
     const activeUser = await User.getActiveUser();
-    return cleanUpAppData(collectionName, [activeUser._id]);
+    const usersToDelete = activeUser ? [activeUser._id] : [];
+    return cleanUpAppData(collectionName, usersToDelete);
   });
 
-  afterEach('cleanUpAppData - delta', function () {
+  afterEach(function () {
     // Clean up sample data
     return cleanUpAppData(deltaCollectionName);
   });
@@ -304,7 +305,7 @@ describe('AutoStore', function() {
       });
     });
 
-    describe('with invalid data and network interruptions', function() {
+    describe.skip('with invalid data and network interruptions', function() {
       it('should return an error for an invalid query');
       it('should return regular error for invalid operation');
       it('should return locally stored data if connectivity error');
@@ -373,7 +374,7 @@ describe('AutoStore', function() {
       });
     });
 
-    describe('with invalid data or with network interruption', async function() {
+    describe.skip('with invalid data or with network interruption', function() {
       it('should return an error for an invalid query');
       it('should return the number of locally stored items with network interruption');
       it('should return the number of locally stored items with network interruption and tagged store');
@@ -419,7 +420,7 @@ describe('AutoStore', function() {
       });
     });
 
-    describe('with invalid data and network interruptions', function () {
+    describe.skip('with invalid data and network interruptions', function () {
       it('should throw error if an id is not provided');
       it('should throw regular error for an invalid operation');
       it('should return locally stored items if connectivity error is returned');
@@ -468,7 +469,7 @@ describe('AutoStore', function() {
       expect(await syncTypeCollection.find().toPromise()).to.deep.equal([]);
     });
 
-    it('should return error with connectivity issue');
+    // it('should return error with connectivity issue');
 
     it('should pull only the items conforming to a query', async function() {
       const autoTypeCollection = DataStore.collection(collectionName, DataStoreType.Auto);
@@ -585,9 +586,9 @@ describe('AutoStore', function() {
       expect(docs.length).to.equal(0);
     });
 
-    it('should return error for invalid query');
+    // it('should return error for invalid query');
 
-    it('should return error if there are items not synced with the backend');
+    // it('should return error if there are items not synced with the backend');
 
     it('should persist updated and deleted items', async function() {
       const autoTypeCollection = DataStore.collection(collectionName, DataStoreType.Auto);
@@ -730,7 +731,7 @@ describe('AutoStore', function() {
       expect(await autoTypeCollection.pendingSyncEntities()).to.deep.equal([]);
     });
 
-    it('should return error for connectivity error');
+    // it('should return error for connectivity error');
 
     it('should push all items disregarding a query', async function() {
       const autoTypeCollection = DataStore.collection(collectionName, DataStoreType.Auto);
@@ -761,7 +762,7 @@ describe('AutoStore', function() {
       });
     });
 
-    it('should complete push of multiple items if one of them fails');
+    // it('should complete push of multiple items if one of them fails');
 
     it('should recreate an item changed locally but deleted from the server', async function() {
       const autoTypeCollection = DataStore.collection(collectionName, DataStoreType.Auto);
@@ -861,9 +862,9 @@ describe('AutoStore', function() {
       });
     });
 
-    it('should return error if there is network connectivity for the push request and save the sync queue');
+    // it('should return error if there is network connectivity for the push request and save the sync queue');
 
-    it('should push the data and return connectivity error if the pull request cannot connect');
+    // it('should push the data and return connectivity error if the pull request cannot connect');
 
     it('should push all items and pull all items with tagged store', async function() {
       const tag = randomString();
@@ -948,11 +949,11 @@ describe('AutoStore', function() {
       expect(await networkTypeCollection.findById(doc._id).toPromise()).to.deep.equal(doc);
     });
 
-    it('should save locally the item if connectivity error occurs');
+    // it('should save locally the item if connectivity error occurs');
 
-    it('should throw regular error for invalid operation');
+    // it('should throw regular error for invalid operation');
 
-    it('should create multiple sync operations with connectivity issues');
+    // it('should create multiple sync operations with connectivity issues');
 
     it('should create locally an item with tagged store', async function() {
       const tag = randomString();
@@ -974,9 +975,9 @@ describe('AutoStore', function() {
   });
 
   describe('Update', function() {
-    it('should throw an error when trying to update an array of items');
+    // it('should throw an error when trying to update an array of items');
 
-    it('should throw an error for trying to update without supplying and _id');
+    // it('should throw an error for trying to update without supplying and _id');
 
     it('should create an item whose _id does not exist', async function() {
       const autoTypeCollection = DataStore.collection(collectionName, DataStoreType.Auto);
@@ -1010,11 +1011,11 @@ describe('AutoStore', function() {
       expect(await networkTypeCollection.findById(doc._id).toPromise()).to.deep.equal(doc);
     });
 
-    it('should save locally the item if connectivity error occurs');
+    // it('should save locally the item if connectivity error occurs');
 
-    it('should throw error if invalid credentials');
+    // it('should throw error if invalid credentials');
 
-    it('should create mutiple sync operations with connectivity issues');
+    // it('should create mutiple sync operations with connectivity issues');
 
     it('should update an item with existing _id tagged store', async function() {
       const tag = randomString();
@@ -1121,9 +1122,9 @@ describe('AutoStore', function() {
       expect(await syncTypeCollection.find().toPromise()).to.deep.equal(sampleDocs);
     });
 
-    it('should return an error for invalid query');
+    // it('should return an error for invalid query');
 
-    it('should remove item locally and create delete operation in the sync queue with connectivity error');
+    // it('should remove item locally and create delete operation in the sync queue with connectivity error');
 
     it('should delete locally stored items that are deleted from the backend', async function() {
       const autoTypeCollection = DataStore.collection(collectionName, DataStoreType.Auto);
@@ -1270,7 +1271,7 @@ describe('AutoStore', function() {
         await autoTypeCollection.create([...Array(batchCount).keys()].map((key) => ({ name: key })));
 
         expect(await networkTypeCollection.count().toPromise()).to.equal(batchCount);
-      }).timeout(15000);
+      });
 
       it('should read correctly created items', async () => {
         const syncCollectionName = randomString();

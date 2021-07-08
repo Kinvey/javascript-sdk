@@ -30,3 +30,13 @@ task:
       chrome_install_script: npm i chromium
       chrome_deps_install_script: apt-get update && apt-get install -y libnss3 libatk-bridge2.0-0 libx11-xcb1 libxcb-dri3-0 libdrm2 libgbm-dev libasound2 libxss1 libgtk-3-0 libxshmfence1
       html5int_script: npm run test-integration:html5
+
+    - name: ReactNative Unit
+      install_script: npm ci
+      js_install_script: cd packages/react-native-sdk && npm ci
+      jsunit_script: npm run test-unit:react-native
+
+    - name: ReactNative Integration
+      js_install_script: cd packages/js-sdk && npm ci
+      node_install_script: cd packages/react-native-sdk && npm ci
+      nodeint_script: npm run test-integration:react-native
